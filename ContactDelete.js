@@ -8,7 +8,7 @@ function InitiateDeleteProcess() {
 		var configDE = DataExtension.Init('dev_deleteconfig')
 
 		/* ---------------- TO BE USED IN FUTURE FUNCTIONS ----------------- */
-		/*		var logDE = DataExtension.Init('dev_deletelog')              */
+		/*	var logDE = DataExtension.Init('dev_deletelog')              */
 		/*   	var queueDE = DataExtension.Init('dev_deletequeue')          */
 		/*  	var operationDE = DataExtension.Init('dev_deleteoperations') */
 		/* ----------------------------------------------------------------- */
