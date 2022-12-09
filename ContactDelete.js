@@ -1,3 +1,23 @@
+/* ===============================  WARNING!!! ================================== */
+//	
+//	This script is still under development. Use of this script assumes that
+//	the user is aware of the potential risks involved - known and unknown. 
+//	This may include script errors, stuck deletion processes, possible
+//	API timeouts, etc.
+//
+/* ============================================================================== */
+
+/* ========================  CONTACT DELETE SCRIPT v3.0  ======================== */
+//
+//	DECRIPTION:
+//	This script was developed to batch large amounts of Marketing Cloud Contacts
+//	segmented for deletion.
+//
+//	Contacts should be imported in the Data Extension 'deletequeue' that are
+//	intended for this script to process.
+//
+/* ============================================================================== */
+
 Platform.Load("Core", "1.1.1")
 
 var initiate = new InitiateDeleteProcess()
@@ -12,10 +32,10 @@ function InitiateDeleteProcess() {
 		/*   	var queueDE = DataExtension.Init('dev_deletequeue')          */
 		/*  	var operationDE = DataExtension.Init('dev_deleteoperations') */
 		/* ----------------------------------------------------------------- */
-		
 
 		/* -------- Retrieve ConfigDE Values -------- */
 		var configSettings = configDE.Rows.Retrieve()[0]
+		
 		// var batchSize = parseInt(configSettings.batchSize)
 		// var maxActive = parseInt(configSettings.maxActive)
 
