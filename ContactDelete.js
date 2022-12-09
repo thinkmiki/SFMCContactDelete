@@ -35,7 +35,7 @@ function InitiateDeleteProcess() {
 
 		/* -------- Retrieve ConfigDE Values -------- */
 		var configSettings = configDE.Rows.Retrieve()[0]
-		
+
 		// var batchSize = parseInt(configSettings.batchSize)
 		// var maxActive = parseInt(configSettings.maxActive)
 
@@ -50,47 +50,55 @@ function InitiateDeleteProcess() {
 	} catch (error) {
 		return error
 	}
-}
 
-function getToken(configDE, configSettings) {
-	try {
-		/* -------- Set Auth Headers and Payload -------- */
-		var contentType = 'application/json'
-		var payload = Stringify({
-			"grant_type": "client_credentials",
-			"client_id": configSettings.client,
-			"client_secret": configSettings.secret
-		})
 
-		/* -------- POST Headers and Payload to generate token -------- */
-		var accessTokenResult = HTTP.Post(configSettings.authEndpoint + "/v2/token", contentType, payload)
+	function getToken(configDE, configSettings) {
+		try {
+			/* -------- Set Auth Headers and Payload -------- */
+			var contentType = 'application/json'
+			var payload = Stringify({
+				"grant_type": "client_credentials",
+				"client_id": configSettings.client,
+				"client_secret": configSettings.secret
+			})
 
-		/* -------- Retrieve Access Token and REST URL from response -------- */
-		var accessToken = Platform.Function.ParseJSON(accessTokenResult.Response[0]).access_token
-		var restBase = Platform.Function.ParseJSON(accessTokenResult.Response[0]).rest_instance_url
+			/* -------- POST Headers and Payload to generate token -------- */
+			var accessTokenResult = HTTP.Post(configSettings.authEndpoint + "/v2/token", contentType, payload)
 
-		configDE.Rows.Update({
-				"authToken": accessToken,
-				"authRefreshDate": Now(),
-				"restEndpoint": restBase
-			},
-			["client"], [configSettings.client])
+			/* -------- Retrieve Access Token and REST URL from response -------- */
+			var accessToken = Platform.Function.ParseJSON(accessTokenResult.Response[0]).access_token
+			var restBase = Platform.Function.ParseJSON(accessTokenResult.Response[0]).rest_instance_url
+			var expiresIn = Platform.Function.ParseJSON(accessTokenResult.Response[0]).expires_In
 
-		checkToken(configDE, configSettings)
+			configDE.Rows.Update({
+					"authToken": accessToken,
+					"authRefreshDate": Now(),
+					"restEndpoint": restBase,
+					"expiresIn": expiresIn
+				},
+				["client"], [configSettings.client])
 
-	} catch (error) {
-		return error
+			checkToken(configDE, configSettings)
+
+		} catch (error) {
+			return error
+		}
+
+		function checkToken(configDE, configSettings) {
+			var refreshDate = new Date(configSettings.authRefreshDate)
+			var currentDate = new Date(Now())
+
+			var dateDiff = (currentDate - refreshDate)
+			var dateDiff = Math.round((dateDiff / configSettings.expiresIn))
+
+			while (dateDiff < 1080) {
+
+			}
+		}
 	}
-}
 
-function checkToken(configDE, configSettings) {
-	var refreshDate = new Date(configSettings.authRefreshDate)
-	var currentDate = new Date(Now())
-
-	var dateDiff = (currentDate - refreshDate)
-	var dateDiff = Math.round((dateDiff/1000))
-
-	while (dateDiff < 1080) {
+	function getSyncOperations(params) {
 		
 	}
+
 }
