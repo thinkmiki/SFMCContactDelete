@@ -4,19 +4,23 @@ var initiate = new InitiateDeleteProcess()
 
 function InitiateDeleteProcess() {
 	try {
-		/* -------- Intialize Data Extensions -------- */
-		var logDE = DataExtension.Init('dev_deletelog')
-		var queueDE = DataExtension.Init('dev_deletequeue')
-		var operationDE = DataExtension.Init('dev_deleteoperations')
+		/* ---------- Intialize Configuration Data Extension ----------- */
 		var configDE = DataExtension.Init('dev_deleteconfig')
+
+		/* ---------------- TO BE USED IN FUTURE FUNCTIONS ----------------- */
+		/*		var logDE = DataExtension.Init('dev_deletelog')              */
+		/*   	var queueDE = DataExtension.Init('dev_deletequeue')          */
+		/*  	var operationDE = DataExtension.Init('dev_deleteoperations') */
+		/* ----------------------------------------------------------------- */
+		
 
 		/* -------- Retrieve ConfigDE Values -------- */
 		var configSettings = configDE.Rows.Retrieve()[0]
-		var batchSize = parseInt(configSettings.batchSize)
-		var maxActive = parseInt(configSettings.maxActive)
+		// var batchSize = parseInt(configSettings.batchSize)
+		// var maxActive = parseInt(configSettings.maxActive)
 
-		/* -------- Check to see if ConfigDE contains values then calls the getToken() function if true -------- */
-
+		/* -------- Check to see if ConfigDE contains at least one row. -------- */
+		/* -------- If true, then call the getToken() function. -------- */
 		if (configSettings.length > 0) {
 			getToken(configDE, configSettings)
 		} else {
