@@ -1,0 +1,86 @@
+Platform.Load("Core","1.1.1");
+var logDE = DataExtension.Init('deletelog');
+var queueDE = DataExtension.Init('deletequeue');
+var operationDE = DataExtension.Init('deleteoperations');
+var configDE = DataExtension.Init('deleteconfig');
+
+/* -------- Get Configs -------- */
+var configRow = configDE.Rows.Retrieve()[0]
+var BATCHSIZE = parseInt(configRow.batchSize)
+var MAXACTIVE = parseInt(configRow.maxActive)
+var CLIENT = configRow.client
+var SECRET = configRow.secret
+var AUTHURL = configRow.authEndpoint + "/v2/token"
+
+
+/* -------- Get Auth -------- */
+var contentType = 'application/json';
+var payload = Stringify({"grant_type": "client_credentials","client_id": CLIENT,"client_secret": SECRET});
+var accessTokenResult = HTTP.Post(AUTHURL, contentType, payload);
+var accessToken = Platform.Function.ParseJSON(accessTokenResult.Response[0]).access_token;
+var restBase = Platform.Function.ParseJSON(accessTokenResult.Response[0]).rest_instance_url
+
+/* -------- Sync Operation Status -------- */
+var rows = operationDE.Rows.Lookup(["status"], ["processing"]);
+if (!rows) { var count = 0} else { var count = rows.length}
+var availableOperations = MAXACTIVE - count
+
+for (i=0; i < rows.length; i++) {
+var status = [0];
+var res = Platform.Function.HTTPGet(restBase + 'contacts/v1/contacts/actions/delete/status?operationID=' + rows[i].operationid, false,0,['Authorization','ContentType'],['Bearer ' + accessToken, 'application/json'],status);
+if(status[0] == 0) {
+if (Platform.Function.ParseJSON(res).operation.status == 'Completed' && Platform.Function.ParseJSON(res).backgroundOperationsSummary[0].backgroundOperationStatusID =='Completed') {
+operationDE.Rows.Update({"status": "Complete"}, ["operationid"], [rows[i].operationid]);
+availableOperations = availableOperations + 1
+}
+} else {
+logDE.Rows.Add({message: "Error Checking known operation status: " + Stringify(res)})
+}
+}
+
+/* -------- Create New Batches -------- */
+
+logDE.Rows.Add({"message": 'AvailableOperations: ' + availableOperations})
+
+if (availableOperations>0){
+var queuedRows = queueDE.Rows.Lookup(["claimed"], [0], BATCHSIZE*availableOperations, "createddate");
+} else {
+logDE.Rows.Add({message: "No available operations."})
+var queuedRows = []
+}
+
+
+
+while (availableOperations>0 && queuedRows.length>0) {
+var batch = queuedRows.splice(0,BATCHSIZE)
+var keys = []
+for (i=0; i < batch.length; i++) {
+keys.push(batch[i].contactkey)
+}
+
+Write('Sending batch of: ' + batch.length)
+logDE.Rows.Add({"message": 'Pushing batch of: ' + batch.length})
+var payload = Stringify({
+"ContactTypeId": 0,
+"values": keys,
+"DeleteOperationType": "ContactAndAttributes"
+});
+logDE.Rows.Add({"message": 'Pushing payload: ' + payload})
+var headerNames = ["Authorization"];
+var headerValues = ["Bearer "+ accessToken];
+
+var req = HTTP.Post(restBase+'contacts/v1/contacts/actions/delete?type=keys','application/json', payload, headerNames, headerValues);
+var res = Platform.Function.ParseJSON(req["Response"][0])
+if (res.operationInitiated) {
+operationDE.Rows.Add({"operationid": res.operationID, "status": 'Processing'})
+for (i=0; i < keys.length; i++) {
+queueDE.Rows.Update({"claimed": "1", "operationId": res.operationID}, ["contactkey"], [batch[i].contactkey]);
+}
+
+} else {
+logDE.Rows.Add({"message": 'Error initiating operation: ' + req['Response'][0]})
+}
+
+availableOperations = availableOperations -1
+
+}
