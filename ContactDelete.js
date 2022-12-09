@@ -84,5 +84,13 @@ function getToken(configDE, configSettings) {
 }
 
 function checkToken(configDE, configSettings) {
-	
+	var refreshDate = new Date(configSettings.authRefreshDate)
+	var currentDate = new Date(Now())
+
+	var dateDiff = (currentDate - refreshDate)
+	var dateDiff = Math.round((dateDiff/1000))
+
+	while (dateDiff < 1080) {
+		
+	}
 }
