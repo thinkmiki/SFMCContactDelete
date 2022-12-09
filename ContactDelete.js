@@ -76,7 +76,13 @@ function getToken(configDE, configSettings) {
 			},
 			["client"], [configSettings.client])
 
+		checkToken(configDE, configSettings)
+
 	} catch (error) {
 		return error
 	}
+}
+
+function checkToken(configDE, configSettings) {
+	
 }
